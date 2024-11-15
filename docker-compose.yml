@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    image: hoangph303/yolo11-tracking-fastreact_backend:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - UVICORN_WORKERS=4  # Optional: define number of Uvicorn workers
+    volumes:
+      - ./backend:/app  # Optional: for development, to sync changes
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    image: hoangph303/yolo11-tracking-fastreact_frontend:latest
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
