@@ -1,4 +1,5 @@
 import React from 'react';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 import './App.scss';
 
 
@@ -36,38 +37,56 @@ class App extends React.Component<{}, AppState> {
     }
 
     componentDidMount() {
+        const apiUrl = 'http://localhost:8000'; // Default to localhost if not set
+        console.log(apiUrl);
 
-        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000'; // Default to localhost if not set
-        this.eventSource = new EventSource(`${apiUrl}/`);
         this.setState({
-            connectionStatus: 'Connected',
-            showRefreshPrompt: false
+            connectionStatus: 'Connecting...',
+            showRefreshPrompt: false,
         });
 
-        this.eventSource.onmessage = (event: MessageEvent) => {
-            this.frameCount += 1;
-            const data = JSON.parse(event.data);
-            if (this.frameCount % 1 === 0) {
-                this.setState({
-                    image_base64: data.frame_base64,
-                    fps: data.fps,
-                    laneCounts: data.lane_counts,
-                    connectionStatus: 'Connected'
-                });
-            }
-        };
+        fetchEventSource(`${apiUrl}/`, {
+            method: 'GET',
+            onopen: async (response) => {
+                console.log(response)
+                if (response.ok && response.headers.get('content-type') === 'text/event-stream; charset=utf-8') {
+                    console.log('Connected to SSE');
+                    console.log('Content-type : ', response.headers.get('content-type'))
+                } else {
+                    console.log('Content-type : ', response.headers.get('content-type'))
+                    console.error('Failed to connect to SSE:', response.statusText);
+                    throw new Error(`Failed to connect: ${response.statusText}`);
+                }
+            },
+            onmessage: (event) => {
+                this.frameCount += 1;
+                const data = JSON.parse(event.data);
 
-        this.eventSource.onerror = (error) => {
-            console.error("Error in SSE connection:", error);
-            this.setState({
-                connectionStatus: 'Disconnected',
-                showRefreshPrompt: true
-            });
-            if (this.eventSource) {
-                this.eventSource.close();
-                this.eventSource = undefined;
-            }
-        };
+                if (this.frameCount % 1 === 0) {
+                    this.setState({
+                        image_base64: data.frame_base64,
+                        fps: data.fps,
+                        laneCounts: data.lane_counts,
+                        connectionStatus: 'Connected',
+                    });
+                }
+            },
+            onerror: (error) => {
+                console.error("Error in SSE connection:", error);
+                this.setState({
+                    connectionStatus: 'Disconnected',
+                    showRefreshPrompt: true,
+                });
+            },
+            onclose: () => {
+                console.log("SSE connection closed");
+                this.setState({
+                    connectionStatus: 'Disconnected',
+                    showRefreshPrompt: true,
+                });
+            },
+            openWhenHidden: true, // Optional: Ensures connection remains even when the tab is inactive
+        });
     }
 
     componentWillUnmount() {
@@ -76,7 +95,6 @@ class App extends React.Component<{}, AppState> {
             this.eventSource = undefined;
         }
     }
-
 
     // Function to render the refresh prompt modal
     renderRefreshPrompt = () => {

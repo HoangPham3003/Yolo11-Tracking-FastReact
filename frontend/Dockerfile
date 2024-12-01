@@ -1,5 +1,3 @@
-# frontend/Dockerfile
-
 # Use Node.js to build the frontend
 FROM node:16 as build
 
@@ -16,14 +14,8 @@ COPY . .
 # Build the application for production
 RUN npm run build
 
-# Use an nginx image to serve the frontend
-FROM nginx:alpine
-
-# Copy the build output to nginx’s default html location
-COPY --from=build /app/build /usr/share/nginx/html
-
 # Expose the port that Nginx will serve on
-EXPOSE 80
+EXPOSE 3000
 
 # Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["npm", "start"]
