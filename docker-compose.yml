@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+
+  # Add ngrok service
+  ngrok-frontend:
+    image: wernight/ngrok
+    container_name: ngrok_frontend
+    ports:
+      - "4040:4040"
+    command: ["ngrok", "http", "frontend:3000"]
+    depends_on:
+      - frontend
+    environment:
+      - NGROK_AUTHTOKEN=[NGROK AUTHTOKEN]
+    networks:
+      - app-network
+
   backend:
     build:
       context: ./backend
@@ -9,10 +24,6 @@ services:
     image: hoangph303/yolo11-tracking-fastreact_backend:latest
     ports:
       - "8000:8000"
-    environment:
-      - UVICORN_WORKERS=4  # Optional: define number of Uvicorn workers
-    volumes:
-      - ./backend:/app  # Optional: for development, to sync changes
     networks:
       - app-network
 
@@ -23,9 +34,7 @@ services:
     container_name: frontend
     image: hoangph303/yolo11-tracking-fastreact_frontend:latest
     ports:
-      - "3000:80"
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - "3000:3000"
     networks:
       - app-network
 
