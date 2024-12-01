@@ -137,7 +137,7 @@ async def stream_video(cap):
             data = json.dumps(data)
             
             # Yield the frame in SSE format
-            yield f"data:{data}\n\n"
+            yield f"data: {data}\n\n"
             await asyncio.sleep(0.1)
     finally:
         cap.release()

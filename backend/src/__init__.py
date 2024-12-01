@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 
 from .endpoints import home
